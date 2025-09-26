@@ -11,3 +11,10 @@ export interface ImagePart {
     data: string;
   };
 }
+
+export interface AudioPart {
+  inlineData: {
+    mimeType: string;
+    data: string;
+  };
+}

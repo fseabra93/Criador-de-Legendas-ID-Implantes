@@ -5,17 +5,19 @@ import { CaptionCard } from './components/CaptionCard';
 import { Loader } from './components/Loader';
 import { generateCaptions } from './services/geminiService';
 import type { CaptionData } from './types';
+import { AudioUploader } from './components/AudioUploader';
 
 const App: React.FC = () => {
   const [images, setImages] = useState<string[]>([]);
+  const [audio, setAudio] = useState<string | null>(null);
   const [userText, setUserText] = useState<string>('');
   const [captions, setCaptions] = useState<CaptionData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = useCallback(async () => {
-    if (images.length === 0) {
-      setError('Por favor, carregue pelo menos uma imagem.');
+    if (images.length === 0 && !audio) {
+      setError('Por favor, carregue pelo menos uma imagem ou um arquivo de áudio.');
       return;
     }
 
@@ -24,7 +26,7 @@ const App: React.FC = () => {
     setCaptions(null);
 
     try {
-      const generatedCaptions = await generateCaptions(images, userText);
+      const generatedCaptions = await generateCaptions(images, userText, audio);
       setCaptions(generatedCaptions);
     } catch (err) {
       console.error(err);
@@ -32,7 +34,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [images, userText]);
+  }, [images, userText, audio]);
 
   const InfoIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -56,12 +58,19 @@ const App: React.FC = () => {
           {/* Input Section */}
           <div className="flex flex-col space-y-6">
             <div>
-              <label className="text-lg font-semibold text-gray-700 mb-2 block">1. Carregue suas imagens</label>
+              <label className="text-lg font-semibold text-gray-700 mb-2 block">1. Carregue suas imagens (Opcional)</label>
               <ImageUploader onImagesUpload={setImages} />
             </div>
             <div>
+              <label className="text-lg font-semibold text-gray-700 mb-2 block">2. Carregue um áudio (Opcional)</label>
+               <p className="text-sm text-gray-500 mb-3">
+                Forneça um áudio com depoimentos, descrições ou ideias para a postagem.
+              </p>
+              <AudioUploader onAudioUpload={setAudio} />
+            </div>
+            <div>
               <label htmlFor="userText" className="text-lg font-semibold text-gray-700 mb-2 block">
-                2. Adicione um texto de referência (Opcional)
+                3. Adicione um texto de referência (Opcional)
               </label>
               <p className="text-sm text-gray-500 mb-3">
                 Forneça um exemplo de texto para que a IA possa aprender seu estilo de escrita.
@@ -76,7 +85,7 @@ const App: React.FC = () => {
             </div>
             <button
               onClick={handleGenerate}
-              disabled={isLoading || images.length === 0}
+              disabled={isLoading || (images.length === 0 && !audio)}
               className="w-full bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-500/50 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center shadow-md hover:shadow-lg"
             >
               {isLoading ? 'Gerando...' : 'Gerar Legendas'}
